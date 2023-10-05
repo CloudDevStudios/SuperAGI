@@ -53,7 +53,7 @@ class Config(BaseSettings):
 
 
 ROOT_DIR = os.path.dirname(Path(__file__).parent.parent)
-_config_instance = Config(ROOT_DIR + "/" + CONFIG_FILE)
+_config_instance = Config(f"{ROOT_DIR}/{CONFIG_FILE}")
 
 
 def get_config(key: str, default: str = None) -> str:

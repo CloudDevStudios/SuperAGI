@@ -57,9 +57,7 @@ if __name__ == "__main__":
         if goal == 'q':
             break
         goals.append(goal)
-    isWindows = False
-    if platform == "win32" or platform == "cygwin":
-        isWindows = True
+    isWindows = platform in ["win32", "cygwin"]
     run_npm_commands(shell=isWindows)
 
     try:

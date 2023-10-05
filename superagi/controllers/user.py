@@ -32,11 +32,10 @@ def create_user(user: sqlalchemy_to_pydantic(User, exclude=["id"]),
 @router.get("/get/{user_id}", response_model=sqlalchemy_to_pydantic(User))
 def get_user(user_id: int,
              Authorize: AuthJWT = Depends(check_auth)):
-    # Authorize.jwt_required()
-    db_user = db.session.query(User).filter(User.id == user_id).first()
-    if not db_user:
+    if db_user := db.session.query(User).filter(User.id == user_id).first():
+        return db_user
+    else:
         raise HTTPException(status_code=404, detail="User not found")
-    return db_user
 
 
 @router.put("/update/{user_id}", response_model=sqlalchemy_to_pydantic(User))

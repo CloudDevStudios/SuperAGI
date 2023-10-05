@@ -38,24 +38,44 @@ class AgentOutputParser(BaseOutputParser):
             format_suffix_yellow = "\033[0m\033[0m"
             format_prefix_green = "\033[92m\033[1m"
             format_suffix_green = "\033[0m\033[0m"
-            print(format_prefix_green + "Intelligence : " + format_suffix_green)
+            print(f"{format_prefix_green}Intelligence : {format_suffix_green}")
             if "text" in parsed["thoughts"]:
-                print(format_prefix_yellow + "Thoughts: " + format_suffix_yellow + parsed["thoughts"]["text"] + "\n")
+                print(
+                    f"{format_prefix_yellow}Thoughts: {format_suffix_yellow}"
+                    + parsed["thoughts"]["text"]
+                    + "\n"
+                )
             if "reasoning" in parsed["thoughts"]:
-                print(format_prefix_yellow + "Reasoning: " + format_suffix_yellow + parsed["thoughts"]["reasoning"] + "\n")
+                print(
+                    f"{format_prefix_yellow}Reasoning: {format_suffix_yellow}"
+                    + parsed["thoughts"]["reasoning"]
+                    + "\n"
+                )
 
             if "plan" in parsed["thoughts"]:
-                print(format_prefix_yellow + "Plan: " + format_suffix_yellow + parsed["thoughts"]["plan"] + "\n")
+                print(
+                    f"{format_prefix_yellow}Plan: {format_suffix_yellow}"
+                    + parsed["thoughts"]["plan"]
+                    + "\n"
+                )
 
             if "criticism" in parsed["thoughts"]:
-                print(format_prefix_yellow + "Criticism: " + format_suffix_yellow + parsed["thoughts"]["criticism"] + "\n")
+                print(
+                    f"{format_prefix_yellow}Criticism: {format_suffix_yellow}"
+                    + parsed["thoughts"]["criticism"]
+                    + "\n"
+                )
 
-            print(format_prefix_green + "Action : " + format_suffix_green)
+            print(f"{format_prefix_green}Action : {format_suffix_green}")
             # print(format_prefix_yellow + "Args: "+ format_suffix_yellow + parsed["tool"]["args"] + "\n")
             if parsed["tool"] is None or not parsed["tool"]:
                 return AgentGPTAction(name="", args="")
             if "name" in parsed["tool"]:
-                print(format_prefix_yellow + "Tool: " + format_suffix_yellow + parsed["tool"]["name"] + "\n")
+                print(
+                    f"{format_prefix_yellow}Tool: {format_suffix_yellow}"
+                    + parsed["tool"]["name"]
+                    + "\n"
+                )
             return AgentGPTAction(
                 name=parsed["tool"]["name"],
                 args=parsed["tool"]["args"],

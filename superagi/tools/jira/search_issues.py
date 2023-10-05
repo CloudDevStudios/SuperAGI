@@ -23,17 +23,14 @@ class SearchJiraTool(JiraTool):
         jira = JiraTool.build_jira_instance()
         issues = jira.search_issues(query)
         parsed_issues = self.parse_issues(issues)
-        parsed_issues_str = (
-                "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
-        )
-        return parsed_issues_str
+        return f"Found {len(parsed_issues)}" + " issues:\n" + str(parsed_issues)
 
     def parse_issues(self, issues: Dict) -> List[dict]:
         parsed = []
         for issue in issues["issues"]:
             key = issue.key
             summary = issue.fields.summary
-            created = issue.fields.created[0:10]
+            created = issue.fields.created[:10]
             priority = issue.fields.priority.name
             status = issue.fields.status.name
             try:

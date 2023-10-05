@@ -49,9 +49,7 @@ Session = sessionmaker(bind=engine)
 class AgentExecutor:
     @staticmethod
     def validate_filename(filename):
-        if filename.endswith(".py"):
-            return filename[:-3]  # Remove the last three characters (i.e., ".py")
-        return filename
+        return filename[:-3] if filename.endswith(".py") else filename
 
     @staticmethod
     def create_object(class_name, folder_name, file_name):
@@ -64,9 +62,7 @@ class AgentExecutor:
         # Get the class from the loaded module
         obj_class = getattr(module, class_name)
 
-        # Create an instance of the class
-        new_object = obj_class()
-        return new_object
+        return obj_class()
 
     @staticmethod
     def get_model_api_key_from_execution(agent_execution, session):
@@ -80,12 +76,17 @@ class AgentExecutor:
         organisation = session.query(Organisation).filter(Organisation.id == project.organisation_id).first()
         if not organisation:
             raise HTTPException(status_code=404, detail="Organisation not found")
-        config = session.query(Configuration).filter(Configuration.organisation_id == organisation.id,
-                                                     Configuration.key == "model_api_key").first()
-        if not config:
+        if (
+            config := session.query(Configuration)
+            .filter(
+                Configuration.organisation_id == organisation.id,
+                Configuration.key == "model_api_key",
+            )
+            .first()
+        ):
+            return decrypt_data(config.value)
+        else:
             raise HTTPException(status_code=404, detail="Configuration not found")
-        model_api_key = decrypt_data(config.value)
-        return model_api_key
 
     def execute_next_action(self, agent_execution_id):
         global engine
@@ -125,10 +126,7 @@ class AgentExecutor:
         model_api_key = AgentExecutor.get_model_api_key_from_execution(agent_execution, session)
 
         try:
-            if parsed_config["LTM_DB"] == "Pinecone":
-                memory = VectorFactory.get_vector_storage("PineCone", "super-agent-index1", OpenAiEmbedding(model_api_key))
-            else:
-                memory = VectorFactory.get_vector_storage("PineCone", "super-agent-index1", OpenAiEmbedding(model_api_key))
+            memory = VectorFactory.get_vector_storage("PineCone", "super-agent-index1", OpenAiEmbedding(model_api_key))
         except:
             print("Unable to setup the pincone connection...")
             memory = None
@@ -172,7 +170,10 @@ class AgentExecutor:
         for tool in tools:
             if hasattr(tool, 'goals'):
                 tool.goals = parsed_config["goal"]
-            if hasattr(tool, 'llm') and (parsed_config["model"] == "gpt4" or parsed_config["model"] == "gpt-3.5-turbo"):
+            if hasattr(tool, 'llm') and parsed_config["model"] in [
+                "gpt4",
+                "gpt-3.5-turbo",
+            ]:
                 tool.llm = OpenAi(model="gpt-3.5-turbo",api_key=model_api_key, temperature=0.3)
             elif hasattr(tool, 'llm'):
                 tool.llm = OpenAi(model=parsed_config["model"], api_key=model_api_key, temperature=0.3)

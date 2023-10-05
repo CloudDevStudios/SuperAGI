@@ -32,11 +32,15 @@ class WriteFileTool(BaseTool):
         final_path = file_name
         root_dir = get_config('RESOURCES_OUTPUT_ROOT_DIR')
         if root_dir is not None:
-            root_dir = root_dir if root_dir.startswith("/") else os.getcwd() + "/" + root_dir
-            root_dir = root_dir if root_dir.endswith("/") else root_dir + "/"
+            root_dir = (
+                root_dir
+                if root_dir.startswith("/")
+                else f"{os.getcwd()}/{root_dir}"
+            )
+            root_dir = root_dir if root_dir.endswith("/") else f"{root_dir}/"
             final_path = root_dir + file_name
         else:
-            final_path = os.getcwd() + "/" + file_name
+            final_path = f"{os.getcwd()}/{file_name}"
 
         try:
             with open(final_path, 'w', encoding="utf-8") as file:

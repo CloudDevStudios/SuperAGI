@@ -46,9 +46,7 @@ if __name__ == "__main__":
     check_command("npm", "npm is not installed. Please install npm to proceed.")
     check_command("uvicorn", "uvicorn is not installed. Please install uvicorn to proceed.")
 
-    isWindows = False
-    if platform == "win32" or platform == "cygwin":
-        isWindows = True
+    isWindows = platform in ["win32", "cygwin"]
     run_npm_commands(shell=isWindows)
 
     try:

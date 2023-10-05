@@ -17,8 +17,7 @@ class GoogleSerpApiWrap:
 
     def search_run(self, query):
         results = asyncio.run(self.fetch_serper_results(query=query))
-        response = self.process_response(results)
-        return response
+        return self.process_response(results)
 
     async def fetch_serper_results(self,
                                    query: str, search_type: str = "search"
@@ -30,11 +29,10 @@ class GoogleSerpApiWrap:
         params = {"q": query,}
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    f"https://google.serper.dev/{search_type}", headers=headers, params=params
-            ) as response:
+                            f"https://google.serper.dev/{search_type}", headers=headers, params=params
+                    ) as response:
                 response.raise_for_status()
-                search_results = await response.json()
-                return search_results
+                return await response.json()
 
     def process_response(self, results) -> str:
         snippets: List[str] = []
@@ -50,30 +48,32 @@ class GoogleSerpApiWrap:
             elif answer_box.get("snippetHighlighted"):
                 answer_values.append(", ".join(answer_box.get("snippetHighlighted")))
 
-            if len(answer_values) > 0:
+            if answer_values:
                 snippets.append("\n".join(answer_values))
 
         if results.get("knowledgeGraph"):
             knowledge_graph = results.get("knowledgeGraph", {})
             title = knowledge_graph.get("title")
-            entity_type = knowledge_graph.get("type")
-            if entity_type:
+            if entity_type := knowledge_graph.get("type"):
                 snippets.append(f"{title}: {entity_type}.")
-            description = knowledge_graph.get("description")
-            if description:
+            if description := knowledge_graph.get("description"):
                 snippets.append(description)
-            for attribute, value in knowledge_graph.get("attributes", {}).items():
-                snippets.append(f"{title} {attribute}: {value}.")
-
+            snippets.extend(
+                f"{title} {attribute}: {value}."
+                for attribute, value in knowledge_graph.get(
+                    "attributes", {}
+                ).items()
+            )
         for result in results["organic"][:self.num_results]:
             if "snippet" in result:
                 snippets.append(result["snippet"])
             if "link" in result and len(links) < self.num_results:
                 links.append(result["link"])
-            for attribute, value in result.get("attributes", {}).items():
-                snippets.append(f"{attribute}: {value}.")
-
-        if len(snippets) == 0:
+            snippets.extend(
+                f"{attribute}: {value}."
+                for attribute, value in result.get("attributes", {}).items()
+            )
+        if not snippets:
             return {"snippets": "No good Google Search Result was found", "links": []}
 
         return {"links": links, "snippets": snippets}

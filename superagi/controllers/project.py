@@ -40,10 +40,14 @@ def get_project(project_id: int, Authorize: AuthJWT = Depends(check_auth)):
 
     """Get Project details by project_id"""
 
-    db_project = db.session.query(Project).filter(Project.id == project_id).first()
-    if not db_project:
+    if (
+        db_project := db.session.query(Project)
+        .filter(Project.id == project_id)
+        .first()
+    ):
+        return db_project
+    else:
         raise HTTPException(status_code=404, detail="project not found")
-    return db_project
 
 
 @router.put("/update/{project_id}", response_model=sqlalchemy_to_pydantic(Project))
@@ -57,10 +61,12 @@ def update_project(project_id: int, project: sqlalchemy_to_pydantic(Project, exc
         raise HTTPException(status_code=404, detail="Project not found")
 
     if project.organisation_id:
-        organisation = db.session.query(Organisation).get(project.organisation_id)
-        if not organisation:
+        if organisation := db.session.query(Organisation).get(
+            project.organisation_id
+        ):
+            db_project.organisation_id = organisation.id
+        else:
             raise HTTPException(status_code=404, detail="Organisation not found")
-        db_project.organisation_id = organisation.id
     db_project.name = project.name
     db_project.description = project.description
     db.session.add(db_project)

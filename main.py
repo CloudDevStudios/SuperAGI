@@ -102,8 +102,7 @@ def create_access_token(email, Authorize: AuthJWT = Depends()):
     # expiry_time_hours = get_config("JWT_EXPIRY")
     expiry_time_hours = 1
     expires = timedelta(hours=expiry_time_hours)
-    access_token = Authorize.create_access_token(subject=email, expires_time=expires)
-    return access_token
+    return Authorize.create_access_token(subject=email, expires_time=expires)
 
 # callback to get your configuration
 @AuthJWT.load_config
@@ -154,9 +153,7 @@ def get_classes_in_file(file_path):
     for name, member in inspect.getmembers(module):
         # Check if the member is a class and extends BaseTool
         if inspect.isclass(member) and issubclass(member, BaseTool) and member != BaseTool:
-            class_dict = {}
-            class_dict['class_name'] = member.__name__
-
+            class_dict = {'class_name': member.__name__}
             class_obj = getattr(module, member.__name__)
             try:
                 obj = class_obj()
@@ -228,13 +225,12 @@ def build_single_step_agent():
                                        history_enabled=True,
                                        completion_prompt= "Determine which next tool to use, and respond using the format specified above:")
         session.add(first_step)
-        session.commit()
     else:
         first_step.prompt = output["prompt"]
         first_step.variables = str(output["variables"])
         first_step.output_type = "tools"
         first_step.completion_prompt = "Determine which next tool to use, and respond using the format specified above:"
-        session.commit()
+    session.commit()
     first_step.next_step_id = first_step.id
     session.commit()
 
@@ -317,7 +313,11 @@ def login(request: LoginRequest, Authorize: AuthJWT = Depends()):
     email_to_find = request.email
     user:User = db.session.query(User).filter(User.email == email_to_find).first()
 
-    if user ==None or request.email != user.email or request.password != user.password:
+    if (
+        user is None
+        or request.email != user.email
+        or request.password != user.password
+    ):
         raise HTTPException(status_code=401,detail="Bad username or password")
 
     # subject identifier for who this token is for example id or username from database
@@ -355,40 +355,36 @@ def github_auth_handler(code: str = Query(...), Authorize: AuthJWT = Depends()):
         'Accept': 'application/json'
     }
     response = requests.post(github_token_url, params=params, headers=headers)
-    if response.ok:
-        data = response.json()
-        access_token = data.get('access_token')
-        github_api_url = 'https://api.github.com/user'
-        headers = {
-            'Authorization': f'Bearer {access_token}'
-        }
-        response = requests.get(github_api_url, headers=headers)
-        if response.ok:
-            user_data = response.json()
-            user_email = user_data["email"]
-            if user_email is None:
-                user_email = user_data["login"] + "@github.com"
-            db_user: User = db.session.query(User).filter(User.email == user_email).first()
-            if db_user is not None:
-                jwt_token = create_access_token(user_email, Authorize)
-                redirect_url_success = f"{frontend_url}?access_token={jwt_token}"
-                return RedirectResponse(url=redirect_url_success)
+    if not response.ok:
+        return RedirectResponse(url="https://superagi.com/")
+    data = response.json()
+    access_token = data.get('access_token')
+    github_api_url = 'https://api.github.com/user'
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+    response = requests.get(github_api_url, headers=headers)
+    if not response.ok:
+        return RedirectResponse(url="https://superagi.com/")
+    user_data = response.json()
+    user_email = user_data["email"]
+    if user_email is None:
+        user_email = user_data["login"] + "@github.com"
+    db_user: User = db.session.query(User).filter(User.email == user_email).first()
+    if db_user is not None:
+        jwt_token = create_access_token(user_email, Authorize)
+        redirect_url_success = f"{frontend_url}?access_token={jwt_token}"
+        return RedirectResponse(url=redirect_url_success)
 
 
 
-            user = User(name=user_data["name"], email=user_email)
-            db.session.add(user)
-            db.session.commit()
-            jwt_token = create_access_token(user_email, Authorize)
+    user = User(name=user_data["name"], email=user_email)
+    db.session.add(user)
+    db.session.commit()
+    jwt_token = create_access_token(user_email, Authorize)
 
-            redirect_url_success = f"{frontend_url}?access_token={jwt_token}"
-            return RedirectResponse(url=redirect_url_success)
-        else:
-            redirect_url_failure = "https://superagi.com/"
-            return RedirectResponse(url=redirect_url_failure)
-    else:
-        redirect_url_failure = "https://superagi.com/"
-        return RedirectResponse(url=redirect_url_failure)
+    redirect_url_success = f"{frontend_url}?access_token={jwt_token}"
+    return RedirectResponse(url=redirect_url_success)
 
 
 @app.get('/user')
@@ -407,8 +403,7 @@ async def root(Authorize: AuthJWT = Depends()):
     try:
         Authorize.jwt_required()
         current_user_email = Authorize.get_jwt_subject()
-        current_user = session.query(User).filter(User.email == current_user_email).first()
-        return current_user
+        return session.query(User).filter(User.email == current_user_email).first()
     except:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 

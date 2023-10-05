@@ -21,12 +21,10 @@ class JiraIssueSchema(BaseModel):
 
 class JiraTool(BaseTool):
     @classmethod
-    def build_jira_instance(self) -> dict:
+    def build_jira_instance(cls) -> dict:
         jira_instance_url = get_config("JIRA_INSTANCE_URL")
         jira_username = get_config("JIRA_USERNAME")
         jira_api_token = get_config("JIRA_API_TOKEN")
-        jira = JIRA(
-            server=jira_instance_url,
-            basic_auth=(jira_username, jira_api_token)
+        return JIRA(
+            server=jira_instance_url, basic_auth=(jira_username, jira_api_token)
         )
-        return jira

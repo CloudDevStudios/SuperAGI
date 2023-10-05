@@ -25,9 +25,7 @@ class SearxSearchTool(BaseTool):
 
     def _execute(self, query: str) -> tuple:
         snippets = search_results(query)
-        summary = self.summarise_result(query, snippets)
-
-        return summary
+        return self.summarise_result(query, snippets)
 
     def summarise_result(self, query, snippets):
         summarize_prompt = """Summarize the following text `{snippets}`

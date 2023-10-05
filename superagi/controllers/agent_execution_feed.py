@@ -40,11 +40,14 @@ def get_agent_execution_feed(agent_execution_feed_id: int,
                              Authorize: AuthJWT = Depends(check_auth)):
     """Get an agent execution feed by agent_execution feed id"""
 
-    db_agent_execution_feed = db.session.query(AgentExecutionFeed).filter(
-        AgentExecutionFeed.id == agent_execution_feed_id).first()
-    if not db_agent_execution_feed:
+    if (
+        db_agent_execution_feed := db.session.query(AgentExecutionFeed)
+        .filter(AgentExecutionFeed.id == agent_execution_feed_id)
+        .first()
+    ):
+        return db_agent_execution_feed
+    else:
         raise HTTPException(status_code=404, detail="agent_execution_feed not found")
-    return db_agent_execution_feed
 
 
 @router.put("/update/{agent_execution_feed_id}", response_model=sqlalchemy_to_pydantic(AgentExecutionFeed))
@@ -59,11 +62,13 @@ def update_agent_execution_feed(agent_execution_feed_id: int,
         raise HTTPException(status_code=404, detail="Agent Execution Feed not found")
 
     if agent_execution_feed.agent_execution_id:
-        agent_execution = db.session.query(AgentExecution).get(agent_execution_feed.agent_execution_id)
-        if not agent_execution:
-            raise HTTPException(status_code=404, detail="Agent Execution not found")
-        db_agent_execution_feed.agent_execution_id = agent_execution.id
+        if agent_execution := db.session.query(AgentExecution).get(
+            agent_execution_feed.agent_execution_id
+        ):
+            db_agent_execution_feed.agent_execution_id = agent_execution.id
 
+        else:
+            raise HTTPException(status_code=404, detail="Agent Execution not found")
     if agent_execution_feed.type is not None:
         db_agent_execution_feed.type = agent_execution_feed.type
     if agent_execution_feed.feed is not None:
@@ -84,10 +89,7 @@ def get_agent_execution_feed(agent_execution_id: int,
     if agent_execution is None:
         raise HTTPException(status_code=400, detail="Agent Run not found!")
     feeds = db.session.query(AgentExecutionFeed).filter_by(agent_execution_id=agent_execution_id).order_by(asc(AgentExecutionFeed.created_at)).all()
-    # # parse json
-    final_feeds = []
-    for feed in feeds:
-        final_feeds.append(parse_feed(feed))
+    final_feeds = [parse_feed(feed) for feed in feeds]
     return {
         "status": agent_execution.status,
         "feeds": final_feeds
@@ -98,13 +100,11 @@ def get_execution_tasks(agent_execution_id: int,
                              Authorize: AuthJWT = Depends(check_auth)):
     """Get agent execution feed with other execution details"""
     task_queue = TaskQueue(str(agent_execution_id))
-    tasks = []
-    for task in task_queue.get_tasks():
-        tasks.append({"name": task})
-    completed_tasks = []
-    for task in reversed(task_queue.get_completed_tasks()):
-        completed_tasks.append({"name": task['task']})
-
+    tasks = [{"name": task} for task in task_queue.get_tasks()]
+    completed_tasks = [
+        {"name": task['task']}
+        for task in reversed(task_queue.get_completed_tasks())
+    ]
     return {
         "tasks": tasks,
         "completed_tasks": completed_tasks
@@ -130,7 +130,4 @@ def parse_feed(feed):
             return {"role": "assistant", "feed": final_output, "updated_at": feed.updated_at}
         except Exception:
             return feed
-    if feed.role == "system":
-        return feed
-
     return feed

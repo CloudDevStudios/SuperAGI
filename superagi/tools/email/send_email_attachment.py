@@ -45,8 +45,7 @@ class SendEmailAttachmentTool(BaseTool):
         message["Subject"] = subject
         message["From"] = email_sender
         message["To"] = to
-        signature = get_config('EMAIL_SIGNATURE')
-        if signature:
+        if signature := get_config('EMAIL_SIGNATURE'):
             body += f"\n{signature}"
         message.set_content(body)
         if attachment_path:
@@ -57,7 +56,7 @@ class SendEmailAttachmentTool(BaseTool):
             with open(attachment_path, "rb") as file:
                 message.add_attachment(file.read(), maintype=maintype, subtype=subtype, filename=attachment)
         draft_folder = get_config('EMAIL_DRAFT_MODE_WITH_FOLDER')
-        
+
         if message["To"] == "example@example.com" or draft_folder:
             conn = ImapEmail().imap_open(draft_folder, email_sender, email_password)
             conn.append(

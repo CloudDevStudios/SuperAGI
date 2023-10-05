@@ -33,8 +33,7 @@ class SendEmailTool(BaseTool):
         message["Subject"] = subject
         message["From"] = email_sender
         message["To"] = to
-        signature = get_config('EMAIL_SIGNATURE')
-        if signature:
+        if signature := get_config('EMAIL_SIGNATURE'):
             body += f"\n{signature}"
         message.set_content(body)
         draft_folder = get_config('EMAIL_DRAFT_MODE_WITH_FOLDER')

@@ -61,14 +61,12 @@ class BaseTool(BaseModel):
 
     @property
     def args(self):
-        # print("args_schema", self.args_schema)
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
-        else:
-            name = self.name
-            args_schema = create_function_schema(f"{name}Schema", self.execute)
-            # print("args:", args_schema.schema()["properties"])
-            return args_schema.schema()["properties"]
+        name = self.name
+        args_schema = create_function_schema(f"{name}Schema", self.execute)
+        # print("args:", args_schema.schema()["properties"])
+        return args_schema.schema()["properties"]
 
     @abstractmethod
     def _execute(self, *args: Any, **kwargs: Any):
@@ -138,11 +136,10 @@ class FunctionalTool(BaseTool):
     def args(self):
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
-        else:
-            name = self.name
-            args_schema = create_function_schema(f"{name}Schema", self.execute)
-            # print("args:", args_schema.schema()["properties"])
-            return args_schema.schema()["properties"]
+        name = self.name
+        args_schema = create_function_schema(f"{name}Schema", self.execute)
+        # print("args:", args_schema.schema()["properties"])
+        return args_schema.schema()["properties"]
 
     def _execute(self, *args: Any, **kwargs: Any):
         return self.func(*args, kwargs)
@@ -154,9 +151,9 @@ class FunctionalTool(BaseTool):
         else:
             return cls(description=func.__doc__)
 
-    def registerTool(cls):
-        cls.__registerTool__ = True
-        return cls
+    def registerTool(self):
+        self.__registerTool__ = True
+        return self
 
 
 def tool(*args: Union[str, Callable], return_direct: bool = False,

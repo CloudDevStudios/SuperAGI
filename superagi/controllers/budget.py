@@ -31,10 +31,14 @@ def get_budget(budget_id: int,
                Authorize: AuthJWT = Depends(check_auth)):
     """Get a budget by budget_id"""
 
-    db_budget = db.session.query(Budget).filter(Budget.id == budget_id).first()
-    if not db_budget:
+    if (
+        db_budget := db.session.query(Budget)
+        .filter(Budget.id == budget_id)
+        .first()
+    ):
+        return db_budget
+    else:
         raise HTTPException(status_code=404, detail="budget not found")
-    return db_budget
 
 
 @router.put("/update/{budget_id}", response_model=sqlalchemy_to_pydantic(Budget))

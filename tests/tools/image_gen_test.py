@@ -32,14 +32,14 @@ class TestImageGenTool(unittest.TestCase):
         # Assert the method ran correctly
         self.assertEqual(response, "Images downloaded successfully")
         for image_name in image_names:
-            path = "/tmp/" + image_name
+            path = f"/tmp/{image_name}"
             self.assertTrue(os.path.exists(path))
             with open(path, "rb") as file:
                 self.assertEqual(file.read(), b"image_data")
 
         # Clean up
         for image_name in image_names:
-            os.remove("/tmp/" + image_name)
+            os.remove(f"/tmp/{image_name}")
 
 
 if __name__ == '__main__':

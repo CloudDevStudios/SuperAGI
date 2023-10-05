@@ -14,8 +14,7 @@ class ReadEmail:
         email_body = " ".join(email_body.split())
         email_body = email_body.encode("ascii", "ignore")
         email_body = email_body.decode("utf-8", "ignore")
-        email_body = re.sub(r"http\S+", "", email_body)
-        return email_body
+        return re.sub(r"http\S+", "", email_body)
 
     def clean(self, text):
         return "".join(c if c.isalnum() else "_" for c in text)
@@ -28,10 +27,7 @@ class ReadEmail:
             encoding = ""
         if isinstance(Subject, bytes):
             try:
-                if encoding is not None:
-                    Subject = Subject.decode(encoding)
-                else:
-                    Subject = ""
+                Subject = Subject.decode(encoding) if encoding is not None else ""
             except[LookupError] as err:
                 pass
         From = msg["From"]
@@ -40,8 +36,7 @@ class ReadEmail:
         return From, To, Date, Subject
 
     def download_attachment(self, part, subject):
-        filename = part.get_filename()
-        if filename:
+        if filename := part.get_filename():
             folder_name = self.clean(subject)
             if not os.path.isdir(folder_name):
                 os.mkdir(folder_name)

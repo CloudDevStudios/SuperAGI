@@ -8,9 +8,9 @@ redis_url = get_config('REDIS_URL')
 """TaskQueue manages current tasks and past tasks in Redis """
 class TaskQueue:
     def __init__(self, queue_name: str):
-        self.queue_name = queue_name + "_q"
-        self.completed_tasks = queue_name + "_q_completed"
-        self.db = redis.Redis.from_url("redis://" + redis_url + "/0", decode_responses=True)
+        self.queue_name = f"{queue_name}_q"
+        self.completed_tasks = f"{queue_name}_q_completed"
+        self.db = redis.Redis.from_url(f"redis://{redis_url}/0", decode_responses=True)
 
     def add_task(self, task: str):
         self.db.lpush(self.queue_name, task)
@@ -35,7 +35,4 @@ class TaskQueue:
 
     def get_last_task_details(self):
         response = self.db.lindex(self.completed_tasks, 0)
-        if response is None:
-            return None
-
-        return eval(response)
+        return None if response is None else eval(response)

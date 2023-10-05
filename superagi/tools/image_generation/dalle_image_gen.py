@@ -43,11 +43,15 @@ class ImageGenTool(BaseTool):
             final_path = image
             root_dir = get_config('RESOURCES_OUTPUT_ROOT_DIR')
             if root_dir is not None:
-                root_dir = root_dir if root_dir.startswith("/") else os.getcwd() + "/" + root_dir
-                root_dir = root_dir if root_dir.endswith("/") else root_dir + "/"
+                root_dir = (
+                    root_dir
+                    if root_dir.startswith("/")
+                    else f"{os.getcwd()}/{root_dir}"
+                )
+                root_dir = root_dir if root_dir.endswith("/") else f"{root_dir}/"
                 final_path = root_dir + image
             else:
-                final_path = os.getcwd() + "/" + image
+                final_path = f"{os.getcwd()}/{image}"
             url = response[i]['url']
             data = requests.get(url).content
             try:

@@ -33,10 +33,14 @@ def create_organisation(organisation: sqlalchemy_to_pydantic(Organisation, exclu
 @router.get("/get/{organisation_id}", response_model=sqlalchemy_to_pydantic(Organisation))
 def get_organisation(organisation_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """Get Organistaion details by organistaion_id"""
-    db_organisation = db.session.query(Organisation).filter(Organisation.id == organisation_id).first()
-    if not db_organisation:
+    if (
+        db_organisation := db.session.query(Organisation)
+        .filter(Organisation.id == organisation_id)
+        .first()
+    ):
+        return db_organisation
+    else:
         raise HTTPException(status_code=404, detail="organisation not found")
-    return db_organisation
 
 
 @router.put("/update/{organisation_id}", response_model=sqlalchemy_to_pydantic(Organisation))

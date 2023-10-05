@@ -48,9 +48,4 @@ class OpenAi(BaseLlm):
             return {"error": exception}
 
     def generate_image(self, prompt: str, size: int = 512, num: int = 2):
-        response = openai.Image.create(
-            prompt=prompt,
-            n=num,
-            size=f"{size}x{size}"
-        )
-        return response
+        return openai.Image.create(prompt=prompt, n=num, size=f"{size}x{size}")

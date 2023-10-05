@@ -45,14 +45,11 @@ class KafkaBroker:
         if message is None:
           continue
         if message.error():
-          if message.error().code() == KafkaError._PARTITION_EOF:
-            # End of partition, continue to next message
-            continue
-          else:
+          if message.error().code() != KafkaError._PARTITION_EOF:
             # Log error and continue to next message
             print("Error occurred:", message.error())
-            continue
-
+          # End of partition, continue to next message
+          continue
         # Process the received message
         on_message_received(message)
 

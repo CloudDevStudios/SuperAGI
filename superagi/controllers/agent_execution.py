@@ -43,10 +43,14 @@ def get_agent_execution(agent_execution_id: int,
                         Authorize: AuthJWT = Depends(check_auth)):
     """Get a agent execution by agent_execution_id"""
 
-    db_agent_execution = db.session.query(AgentExecution).filter(AgentExecution.id == agent_execution_id).first()
-    if not db_agent_execution:
+    if (
+        db_agent_execution := db.session.query(AgentExecution)
+        .filter(AgentExecution.id == agent_execution_id)
+        .first()
+    ):
+        return db_agent_execution
+    else:
         raise HTTPException(status_code=404, detail="Agent execution not found")
-    return db_agent_execution
 
 
 @router.put("/update/{agent_execution_id}", response_model=sqlalchemy_to_pydantic(AgentExecution))
@@ -63,11 +67,17 @@ def update_agent_execution(agent_execution_id: int,
         raise HTTPException(status_code=404, detail="Agent Execution not found")
 
     if agent_execution.agent_id:
-        agent = db.session.query(Agent).get(agent_execution.agent_id)
-        if not agent:
+        if agent := db.session.query(Agent).get(agent_execution.agent_id):
+            db_agent_execution.agent_id = agent.id
+        else:
             raise HTTPException(status_code=404, detail="Agent not found")
-        db_agent_execution.agent_id = agent.id
-    if agent_execution.status != "CREATED" and agent_execution.status != "RUNNING" and agent_execution.status != "PAUSED" and agent_execution.status != "COMPLETED" and agent_execution.status != "TERMINATED":
+    if agent_execution.status not in [
+        "CREATED",
+        "RUNNING",
+        "PAUSED",
+        "COMPLETED",
+        "TERMINATED",
+    ]:
         raise HTTPException(status_code=400, detail="Invalid Request")
     db_agent_execution.status = agent_execution.status
 
@@ -87,8 +97,7 @@ def agent_list_by_status(status: str,
 
     running_agent_ids = db.session.query(AgentExecution.agent_id).filter(
         AgentExecution.status == status.upper()).distinct().all()
-    agent_ids = [agent_id for (agent_id) in running_agent_ids]
-    return agent_ids
+    return list(running_agent_ids)
 
 
 @router.get("/get/agent/{agent_id}")
@@ -96,9 +105,15 @@ def list_running_agents(agent_id: str,
                         Authorize: AuthJWT = Depends(check_auth)):
     """Get all running state agents"""
 
-    executions = db.session.query(AgentExecution).filter(AgentExecution.agent_id == agent_id).order_by(
-        desc(AgentExecution.status == 'RUNNING'), desc(AgentExecution.last_execution_time)).all()
-    return executions
+    return (
+        db.session.query(AgentExecution)
+        .filter(AgentExecution.agent_id == agent_id)
+        .order_by(
+            desc(AgentExecution.status == 'RUNNING'),
+            desc(AgentExecution.last_execution_time),
+        )
+        .all()
+    )
 
 
 @router.get("/get/latest/agent/project/{project_id}")
@@ -113,9 +128,7 @@ def get_agent_by_latest_execution(project_id: int,
         .order_by(desc(AgentExecution.last_execution_time))
         .first()
     )
-    isRunning = False
-    if latest_execution.status == "RUNNING":
-        isRunning = True
+    isRunning = latest_execution.status == "RUNNING"
     agent = db.session.query(Agent).filter(Agent.id == latest_execution.agent_id).first()
     return {
         "agent_id": latest_execution.agent_id,

@@ -23,7 +23,11 @@ def search(query):
     # TODO: use a better strategy for choosing hosts. Could use this list: https://searx.space/data/instances.json
     searx_url = random.choice(searx_hosts)
     res = httpx.get(
-        searx_url + "/search", params={"q": query}, headers={"User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:109.0) Gecko/20100101 Firefox/114.0"}
+        f"{searx_url}/search",
+        params={"q": query},
+        headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:109.0) Gecko/20100101 Firefox/114.0"
+        },
     )
     if res.status_code != 200:
         print(res.status_code, searx_url)
@@ -39,10 +43,9 @@ def scrape_results(html):
     '''Converts raw HTML into a list of SearchResult objects'''
     soup = BeautifulSoup(html, "html.parser")
     result_divs = soup.find_all(attrs={"class": "result"})
-    
+
     result_list = []
-    n = 1
-    for result_div in result_divs:
+    for n, result_div in enumerate(result_divs, start=1):
         # Needed to work on multiple versions of Searx
         header = result_div.find(["h4", "h3"])
         link = header.find("a")["href"]
@@ -53,18 +56,13 @@ def scrape_results(html):
         # Needed to work on multiple versions of Searx
         sources_container = result_div.find(
             attrs={"class": "pull-right"}
-        ) or result_div.find(attrs={"class": "engines"}) 
+        ) or result_div.find(attrs={"class": "engines"})
         source_spans = sources_container.find_all("span")
-        sources = []
-        for s in source_spans:
-            sources.append(s.text.strip())
-
+        sources = [s.text.strip() for s in source_spans]
         result = SearchResult(
             id=n, title=title, link=link, description=description, sources=sources
         )
         result_list.append(result)
-        n += 1
-
     return result_list
 
 

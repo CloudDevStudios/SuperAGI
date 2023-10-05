@@ -62,14 +62,10 @@ class Pinecone(VectorStore):
         embed_text = self.embedding_model.get_embedding(query)
         res = self.index.query(embed_text, top_k=top_k, namespace=namespace, include_metadata=True)
 
-        documents = []
-
-        for doc in res['matches']:
-            documents.append(
-                Document(
-                    text_content=doc.metadata[self.text_field],
-                    metadata=doc.metadata,
-                )
+        return [
+            Document(
+                text_content=doc.metadata[self.text_field],
+                metadata=doc.metadata,
             )
-
-        return documents
+            for doc in res['matches']
+        ]

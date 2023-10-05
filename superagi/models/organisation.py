@@ -15,11 +15,16 @@ class Organisation(DBBaseModel):
     @classmethod
     def find_or_create_organisation(cls, session, user):
         if user.organisation_id is not None:
-            organisation = session.query(Organisation).filter(Organisation.id == user.organisation_id).first()
-            return organisation
-
-        existing_organisation = session.query(Organisation).filter(
-            Organisation.name == "Default Organization - " + str(user.id)).first()
+            return (
+                session.query(Organisation)
+                .filter(Organisation.id == user.organisation_id)
+                .first()
+            )
+        existing_organisation = (
+            session.query(Organisation)
+            .filter(Organisation.name == f"Default Organization - {str(user.id)}")
+            .first()
+        )
 
         if existing_organisation is not None:
             user.organisation_id = existing_organisation.id
@@ -27,7 +32,7 @@ class Organisation(DBBaseModel):
             return existing_organisation
 
         new_organisation = Organisation(
-            name="Default Organization - " + str(user.id),
+            name=f"Default Organization - {str(user.id)}",
             description="New default organiztaion",
         )
 

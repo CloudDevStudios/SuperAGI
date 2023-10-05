@@ -44,10 +44,14 @@ def get_agent(agent_id: int,
               Authorize: AuthJWT = Depends(check_auth)):
     """Get particular agent by agent_id"""
 
-    db_agent = db.session.query(Agent).filter(Agent.id == agent_id).first()
-    if not db_agent:
+    if (
+        db_agent := db.session.query(Agent)
+        .filter(Agent.id == agent_id)
+        .first()
+    ):
+        return db_agent
+    else:
         raise HTTPException(status_code=404, detail="agent not found")
-    return db_agent
 
 
 @router.put("/update/{agent_id}", response_model=sqlalchemy_to_pydantic(Agent))
@@ -60,10 +64,10 @@ def update_agent(agent_id: int, agent: sqlalchemy_to_pydantic(Agent, exclude=["i
         raise HTTPException(status_code=404, detail="agent not found")
 
     if agent.project_id:
-        project = db.session.query(Project).get(agent.project_id)
-        if not project:
+        if project := db.session.query(Project).get(agent.project_id):
+            db_agent.project_id = project.id
+        else:
             raise HTTPException(status_code=404, detail="Project not found")
-        db_agent.project_id = project.id
     db_agent.name = agent.name
     db_agent.description = agent.description
 
@@ -164,11 +168,7 @@ def get_agents_by_project_id(project_id: int,
 
         # Query the AgentExecution table using the agent ID
         executions = db.session.query(AgentExecution).filter_by(agent_id=agent_id).all()
-        isRunning = False
-        for execution in executions:
-            if execution.status == "RUNNING":
-                isRunning = True
-                break
+        isRunning = any(execution.status == "RUNNING" for execution in executions)
         new_agent = {
             **agent_dict,
             'status': isRunning
